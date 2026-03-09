@@ -420,9 +420,11 @@
 
   // Propiedades base (siempre disponibles)
   const propiedadesBase = [
-    { id: 1, titulo: 'Departamento Moderno', precio: 'S/ 1,500/mes', op: 'Alquiler', tipo: 'Departamento', loc: 'Chincha, Ica', dorm: 3, ban: 2, area: 85, desc: 'Amplio departamento con acabados modernos, cocina equipada, sala comedor y balcón. Edificio con estacionamiento y seguridad 24h.' },
-    { id: 2, titulo: 'Casa Familiar con Jardín', precio: 'S/ 350,000', op: 'Venta', tipo: 'Casa', loc: 'Chincha, Ica', dorm: 4, ban: 3, area: 200, desc: 'Hermosa casa con jardín amplio, zona de parrilla, cuarto de servicio y garaje para 2 autos. Ubicada en zona residencial tranquila y segura.' },
-    { id: 3, titulo: 'Local Comercial Céntrico', precio: 'S/ 2,800/mes', op: 'Alquiler', tipo: 'Local Comercial', loc: 'Chincha, Ica', dorm: 0, ban: 1, area: 60, desc: 'Local ideal para negocio en zona de alto tránsito comercial. Acabados modernos, buena iluminación y acceso directo desde la calle.' },
+    { id: 1, titulo: 'Departamento Moderno en Miraflores', precio: 'S/ 2,800/mes', op: 'Alquiler', tipo: 'Departamento', loc: 'Miraflores, Lima', dorm: 3, ban: 2, area: 95, desc: 'Amplio departamento con acabados modernos, cocina equipada, sala comedor y balcón con vista al parque. Edificio con estacionamiento y seguridad 24h. Zona exclusiva de Miraflores.' },
+    { id: 2, titulo: 'Casa Familiar en Arequipa', precio: 'S/ 450,000', op: 'Venta', tipo: 'Casa', loc: 'Cayma, Arequipa', dorm: 4, ban: 3, area: 220, desc: 'Hermosa casa con vista a los volcanes, jardín amplio, zona de parrilla, cuarto de servicio y garaje para 2 autos. Ubicada en zona residencial tranquila y segura de Arequipa.' },
+    { id: 3, titulo: 'Local Comercial en Centro de Cusco', precio: 'S/ 3,500/mes', op: 'Alquiler', tipo: 'Local Comercial', loc: 'Centro Histórico, Cusco', dorm: 0, ban: 2, area: 80, desc: 'Local comercial estratégico en zona turística del centro de Cusco. Ideal para restaurante, tienda o agencia. Alto tránsito peatonal, acabados coloniales restaurados.' },
+    { id: 4, titulo: 'Terreno Urbano en Trujillo', precio: 'S/ 280,000', op: 'Venta', tipo: 'Terreno', loc: 'La Esperanza, Trujillo', dorm: 0, ban: 0, area: 300, desc: 'Terreno urbano plano, ideal para proyecto inmobiliario o vivienda multifamiliar. Zonificación residencial de densidad media, todos los servicios disponibles.' },
+    { id: 5, titulo: 'Oficina Corporativa en San Isidro', precio: 'S/ 4,200/mes', op: 'Alquiler', tipo: 'Oficina', loc: 'San Isidro, Lima', dorm: 0, ban: 2, area: 120, desc: 'Oficina premium en edificio corporativo clase A. Piso 12 con vista panorámica, acabados de lujo, 2 estacionamientos, sala de reuniones. Centro financiero de Lima.' },
   ];
 
   // Intentar obtener todas las propiedades (incluyendo las agregadas)
@@ -491,7 +493,7 @@
     }
 
     // WhatsApp
-    const msg = encodeURIComponent(`Hola, vi en su página la propiedad "${prop.titulo}" (${prop.loc}) a ${prop.precio}. Me gustaría recibir más información.`);
+    const msg = encodeURIComponent(`Hola, encontré en su sitio web la propiedad "${prop.titulo}" en ${prop.loc} a ${prop.precio}. Me interesa conocer más detalles.`);
     document.getElementById('btn-wsp').href = `https://wa.me/51915149502?text=${msg}`;
   }
 
