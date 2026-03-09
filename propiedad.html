@@ -172,6 +172,54 @@
     transition:all .3s; margin-top:12px;
   }
   .btn-360:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(26,107,74,0.4); }
+
+  /* Botón agregar imágenes */
+  .btn-add-imgs {
+    display:inline-flex; align-items:center; gap:8px; justify-content:center;
+    background:var(--dorado); color:white; border:none;
+    padding:11px 22px; border-radius:4px;
+    font-family:'Lato',sans-serif; font-size:13px; font-weight:700;
+    letter-spacing:1px; text-transform:uppercase; cursor:pointer;
+    transition:all .3s; margin-top:12px; width:100%;
+  }
+  .btn-add-imgs:hover { background:var(--dorado-claro); transform:translateY(-2px); box-shadow:0 6px 20px rgba(184,151,58,0.4); }
+  
+  /* Formulario subida de imágenes */
+  .upload-imgs-area {
+    display:none; margin-top:20px; padding:20px;
+    background:var(--gris-claro); border-radius:8px;
+    border:2px dashed var(--dorado);
+  }
+  .upload-imgs-area h4 {
+    font-size:13px; font-weight:700; letter-spacing:1px;
+    text-transform:uppercase; color:var(--gris-oscuro);
+    margin-bottom:12px;
+  }
+  .upload-imgs-area input[type="file"] {
+    width:100%; padding:12px; border:1.5px solid #ddd;
+    border-radius:4px; font-family:'Lato',sans-serif; font-size:14px;
+    background:white; margin-bottom:12px; cursor:pointer;
+  }
+  .upload-imgs-btns {
+    display:flex; gap:8px;
+  }
+  .btn-subir-imgs {
+    flex:1; background:var(--verde); color:white; border:none;
+    padding:12px 20px; border-radius:4px; font-weight:700;
+    font-size:13px; letter-spacing:1px; text-transform:uppercase;
+    cursor:pointer; transition:background .2s;
+  }
+  .btn-subir-imgs:hover { background:var(--verde-oscuro); }
+  .btn-subir-imgs:disabled {
+    background:#ccc; cursor:not-allowed;
+  }
+  .btn-cancelar-imgs {
+    background:#e74c3c; color:white; border:none;
+    padding:12px 20px; border-radius:4px; font-weight:700;
+    font-size:13px; letter-spacing:1px; text-transform:uppercase;
+    cursor:pointer; transition:background .2s;
+  }
+  .btn-cancelar-imgs:hover { background:#c0392b; }
   .badge-360 {
     position:absolute; bottom:12px; right:12px;
     background:linear-gradient(135deg,#0d4a32,#1a6b4a);
@@ -236,6 +284,20 @@
             <div style="font-size:2rem;margin-bottom:8px;">🔄</div>
             <div style="font-size:13px;font-weight:700;color:var(--verde);margin-bottom:4px;">Subir foto 360°</div>
             <div style="font-size:12px;color:var(--gris-medio);">Arrastra o clic para subir una imagen equirectangular 360°</div>
+          </div>
+
+          <!-- AGREGAR IMÁGENES A LA GALERÍA -->
+          <button class="btn-add-imgs" onclick="mostrarFormularioImagenes()">
+            📸 Agregar Imágenes
+          </button>
+          
+          <div class="upload-imgs-area" id="upload-imgs-area">
+            <h4>📷 Subir Nuevas Fotos</h4>
+            <input type="file" id="imgs-input" accept="image/*" multiple>
+            <div class="upload-imgs-btns">
+              <button class="btn-subir-imgs" id="btn-subir-imgs" onclick="subirImagenes()">📤 Subir Imágenes</button>
+              <button class="btn-cancelar-imgs" onclick="ocultarFormularioImagenes()">✕</button>
+            </div>
           </div>
         </div>
         <div class="gallery-info">
@@ -402,4 +464,172 @@
     const titulo = prop ? prop.titulo : 'esta propiedad';
     const msg = encodeURIComponent(`Hola, soy ${nombre}. Me interesa "${titulo}". ${document.getElementById('cf-msg').value}`);
     window.open(`https://wa.me/51915149502?text=${msg}`, '_blank');
-    mostrarNotif('✅ Redir
+    mostrarNotif('✅ Redirigiendo a WhatsApp...');
+  }
+
+  // ── FUNCIONES PARA AGREGAR IMÁGENES ──
+  const CLOUDINARY_CLOUD = 'dwezwexv5';
+  const CLOUDINARY_PRESET = 'sj_gestion';
+  const ADMIN_USER = 'admin';
+  const ADMIN_PASS = 'Chincha19+';
+
+  // Verificar si el usuario es admin
+  let esAdmin = sessionStorage.getItem('admin_session') === 'true';
+
+  function mostrarFormularioImagenes() {
+    // Si ya está autenticado, mostrar directamente
+    if (esAdmin) {
+      document.getElementById('upload-imgs-area').style.display = 'block';
+      mostrarNotif('✅ Modo administrador activo');
+      return;
+    }
+
+    // Si no, pedir contraseña
+    const clave = prompt('Ingresa la contraseña para agregar imágenes:');
+    if (clave !== ADMIN_PASS) {
+      if (clave !== null) mostrarNotif('❌ Contraseña incorrecta', '#c0392b');
+      return;
+    }
+    
+    // Guardar sesión de admin
+    esAdmin = true;
+    sessionStorage.setItem('admin_session', 'true');
+    
+    document.getElementById('upload-imgs-area').style.display = 'block';
+    mostrarNotif('✅ Acceso concedido. Puedes subir imágenes ahora.');
+  }
+
+  function ocultarFormularioImagenes() {
+    document.getElementById('upload-imgs-area').style.display = 'none';
+    document.getElementById('imgs-input').value = '';
+  }
+
+  async function subirACloudinary(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_PRESET);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+      method: 'POST', body: formData
+    });
+    const data = await res.json();
+    return data.secure_url;
+  }
+
+  async function subirImagenes() {
+    const input = document.getElementById('imgs-input');
+    const files = Array.from(input.files);
+    
+    if (!files.length) {
+      mostrarNotif('⚠️ Selecciona al menos una imagen', '#c0392b');
+      return;
+    }
+
+    mostrarNotif('⏳ Subiendo imágenes...');
+    document.getElementById('btn-subir-imgs').disabled = true;
+    document.getElementById('btn-subir-imgs').textContent = 'Subiendo...';
+
+    try {
+      const urls = [];
+      for (const file of files) {
+        const url = await subirACloudinary(file);
+        urls.push(url);
+      }
+
+      // Agregar imágenes a la propiedad
+      if (!prop.imgs) prop.imgs = [];
+      prop.imgs.push(...urls);
+      
+      // Si no tiene imagen principal, usar la primera
+      if (!prop.img && urls.length > 0) {
+        prop.img = urls[0];
+      }
+
+      // Guardar en localStorage
+      actualizarPropiedadEnStorage(prop);
+      
+      // Actualizar galería
+      actualizarGaleria();
+      
+      // Resetear formulario
+      input.value = '';
+      ocultarFormularioImagenes();
+      
+      mostrarNotif(`✅ ${urls.length} imagen(es) agregada(s) exitosamente`);
+    } catch (error) {
+      console.error(error);
+      mostrarNotif('❌ Error al subir imágenes. Intenta de nuevo.', '#c0392b');
+    } finally {
+      document.getElementById('btn-subir-imgs').disabled = false;
+      document.getElementById('btn-subir-imgs').textContent = '📤 Subir Imágenes';
+    }
+  }
+
+  function actualizarPropiedadEnStorage(propActualizada) {
+    try {
+      // Actualizar en sessionStorage
+      const desde_session = JSON.parse(sessionStorage.getItem('sj_todas') || '[]');
+      const index_session = desde_session.findIndex(p => String(p.id) === String(propActualizada.id));
+      if (index_session !== -1) {
+        desde_session[index_session] = propActualizada;
+        sessionStorage.setItem('sj_todas', JSON.stringify(desde_session));
+      }
+
+      // Actualizar en localStorage (propiedades extras)
+      const desde_local = JSON.parse(localStorage.getItem('sj_props') || '[]');
+      const index_local = desde_local.findIndex(p => String(p.id) === String(propActualizada.id));
+      if (index_local !== -1) {
+        desde_local[index_local] = propActualizada;
+        localStorage.setItem('sj_props', JSON.stringify(desde_local));
+      } else {
+        // Si no está en extras, agregarla
+        desde_local.push(propActualizada);
+        localStorage.setItem('sj_props', JSON.stringify(desde_local));
+      }
+    } catch (e) {
+      console.error('Error al guardar:', e);
+    }
+  }
+
+  function actualizarGaleria() {
+    const mainImg = document.getElementById('main-img');
+    const thumbs = document.getElementById('thumbs');
+    
+    // Actualizar imagen principal
+    if (prop.img) {
+      mainImg.innerHTML = `<img src="${prop.img}" alt="${prop.titulo}">`;
+    }
+
+    // Actualizar miniaturas
+    thumbs.innerHTML = '';
+    const imgs = prop.imgs || (prop.img ? [prop.img] : []);
+    
+    imgs.forEach((url, index) => {
+      const t = document.createElement('img');
+      t.src = url;
+      t.className = index === 0 ? 'active' : '';
+      t.onclick = () => cambiarImagen(url, t);
+      thumbs.appendChild(t);
+    });
+
+    // Si no hay imágenes, mostrar placeholder
+    if (imgs.length === 0) {
+      mainImg.innerHTML = '<div class="no-foto"><div>📷</div><p>Sin fotos</p></div>';
+    }
+  }
+
+  function cambiarImagen(url, thumb) {
+    document.getElementById('main-img').innerHTML = `<img src="${url}" alt="${prop.titulo}">`;
+    document.querySelectorAll('.gallery-thumbs img').forEach(t => t.classList.remove('active'));
+    thumb.classList.add('active');
+  }
+
+  function mostrarNotif(msg, bg) {
+    const n = document.getElementById('notif');
+    n.textContent = msg;
+    n.style.background = bg || 'var(--verde)';
+    n.classList.add('show');
+    setTimeout(() => n.classList.remove('show'), 3500);
+  }
+</script>
+</body>
+</html>
