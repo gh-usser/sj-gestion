@@ -711,7 +711,14 @@
   }
 
   // ── MODAL ──
-  function abrirModal() { document.getElementById('modal').classList.add('open'); }
+  function abrirModal() {
+    const clave = prompt('Ingresa la contraseña para agregar una propiedad:');
+    if (clave !== 'Chincha19+') {
+      if (clave !== null) mostrarNotif('❌ Contraseña incorrecta', '#c0392b');
+      return;
+    }
+    document.getElementById('modal').classList.add('open');
+  }
   function cerrarModal() { document.getElementById('modal').classList.remove('open'); modalImgData = null; resetModalImg(); }
 
   const CLOUDINARY_CLOUD = 'dwezwexv5';
