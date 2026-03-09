@@ -319,8 +319,6 @@
   .modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus { outline: none; border-color: var(--verde); }
   .modal-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
   .modal-img-upload { border: 2px dashed var(--dorado); padding: 24px; text-align: center; border-radius: 4px; cursor: pointer; margin-bottom: 16px; }
-  .modal-img-upload:hover { background: #fdfbf6; }
-  .modal-img-upload input { display: none; }
   .btn-guardar {
     background: var(--verde); color: var(--blanco); border: none;
     padding: 13px 32px; font-size: 13px; font-weight: 700;
@@ -605,14 +603,14 @@
     <h2>Agregar Propiedad</h2>
     <p style="color:var(--gris-medio);margin-bottom:24px;font-size:14px;">Completa los datos para publicar una nueva propiedad en el portafolio.</p>
 
-    <div class="modal-img-upload" onclick="document.getElementById('modal-img-input').click()">
-      <div id="modal-img-preview" class="modal-img-area" style="margin-bottom:0">
+    <div class="modal-img-upload">
+      <div id="modal-img-preview" class="modal-img-area" style="margin-bottom:12px">
         <div style="text-align:center;color:var(--gris-medio)">
           <div style="font-size:2.5rem;margin-bottom:8px;">🖼️</div>
-          <div style="font-size:13px;letter-spacing:1px;text-transform:uppercase;opacity:.6">Clic para subir foto principal</div>
+          <div style="font-size:13px;letter-spacing:1px;text-transform:uppercase;opacity:.6">Vista previa de foto principal</div>
         </div>
       </div>
-      <input type="file" id="modal-img-input" accept="image/*" multiple onchange="previewModalImg(event)">
+      <input type="file" id="modal-img-input" accept="image/*" multiple onchange="previewModalImg(event)" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:4px;font-size:14px;cursor:pointer;background:#fff;">
     </div>
     <div id="modal-imgs-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;margin-bottom:16px;"></div>
 
@@ -716,42 +714,65 @@
   function abrirModal() { document.getElementById('modal').classList.add('open'); }
   function cerrarModal() { document.getElementById('modal').classList.remove('open'); modalImgData = null; resetModalImg(); }
 
-  function previewModalImg(e) {
+  const CLOUDINARY_CLOUD = 'dwezwexv5';
+  const CLOUDINARY_PRESET = 'sj_gestion';
+
+  async function subirACloudinary(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_PRESET);
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+      method: 'POST', body: formData
+    });
+    const data = await res.json();
+    return data.secure_url;
+  }
+
+  async function previewModalImg(e) {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        modalImgsData.push(ev.target.result);
-        // Mostrar primera imagen en el área principal
+
+    mostrarNotif('⏳ Subiendo imágenes...');
+    document.getElementById('modal-img-preview').innerHTML = `<div style="text-align:center;color:var(--gris-medio)"><div style="font-size:2rem;margin-bottom:8px;">⏳</div><div style="font-size:13px;">Subiendo a servidor...</div></div>`;
+
+    for (const file of files) {
+      try {
+        const url = await subirACloudinary(file);
+        modalImgsData.push(url);
+
+        // Mostrar primera imagen en área principal
         if (modalImgsData.length === 1) {
-          modalImgData = ev.target.result;
-          document.getElementById('modal-img-preview').innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+          modalImgData = url;
+          document.getElementById('modal-img-preview').innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
         }
-        // Agregar miniatura al grid de previsualizaciones
+
+        // Agregar miniatura
         const container = document.getElementById('modal-imgs-preview');
         const wrap = document.createElement('div');
         wrap.style = 'position:relative;';
         const img = document.createElement('img');
-        img.src = ev.target.result;
+        img.src = url;
         img.style = 'width:80px;height:60px;object-fit:cover;border-radius:4px;border:2px solid var(--verde);display:block;cursor:pointer;';
         img.title = 'Clic para usar como foto principal';
         img.onclick = () => {
-          modalImgData = ev.target.result;
-          document.getElementById('modal-img-preview').innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover">`;
+          modalImgData = url;
+          document.getElementById('modal-img-preview').innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover">`;
           document.querySelectorAll('#modal-imgs-preview img').forEach(i => i.style.border = '2px solid var(--verde)');
           img.style.border = '2px solid var(--dorado)';
         };
         wrap.appendChild(img);
         container.appendChild(wrap);
-      };
-      reader.readAsDataURL(file);
-    });
+      } catch(err) {
+        mostrarNotif('❌ Error al subir imagen. Intenta de nuevo.', '#c0392b');
+      }
+    }
+    mostrarNotif(`✅ ${files.length} foto(s) subida(s) correctamente`);
   }
+
   function resetModalImg() {
     modalImgData = null;
     modalImgsData = [];
-    document.getElementById('modal-img-preview').innerHTML = `<div style="text-align:center;color:var(--gris-medio)"><div style="font-size:2.5rem;margin-bottom:8px;">🖼️</div><div style="font-size:13px;letter-spacing:1px;text-transform:uppercase;opacity:.6">Clic para subir fotos (puedes seleccionar varias)</div></div>`;
+    document.getElementById('modal-img-preview').innerHTML = `<div style="text-align:center;color:var(--gris-medio)"><div style="font-size:2.5rem;margin-bottom:8px;">🖼️</div><div style="font-size:13px;letter-spacing:1px;text-transform:uppercase;opacity:.6">Selecciona las fotos de la propiedad</div></div>`;
     document.getElementById('modal-imgs-preview').innerHTML = '';
   }
 
